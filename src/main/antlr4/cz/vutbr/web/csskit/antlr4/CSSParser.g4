@@ -344,19 +344,17 @@ funct_args
     }
 
 funct_argument
-    : ( IDENT
-    	| PLUS
-    	| MINUS
+    : ( MINUS? IDENT
 	    | ASTERISK
         | SLASH
         | LPAREN
         | RPAREN
-        | NUMBER
-        | PERCENTAGE
-        | DIMENSION
+        | (PLUS | MINUS)? NUMBER
+        | (PLUS | MINUS)? PERCENTAGE
+        | (PLUS | MINUS)? DIMENSION
         | HASH
         | string
-        | funct
+        | MINUS? funct
         | COMMA
         | CLASSKEYWORD //invalid
         | UNIRANGE //invalid
@@ -371,7 +369,7 @@ funct_argument
     ) S*
     ;
 	catch [RecognitionException re] {
-		log.error("Recognition exception | valuepart");
+		log.error("Recognition exception | funct_argument");
 		IntervalSet intervalSet = new IntervalSet(RCURLY, SEMICOLON);
 		getCSSErrorHandler().consumeUntil(this, intervalSet, CSSLexerState.RecoveryMode.BALANCED, null);
 		_localctx.addErrorNode(this.getTokenFactory().create(INVALID_STATEMENT,""));

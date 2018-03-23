@@ -1071,57 +1071,58 @@ public class CSSParserVisitorImpl implements CSSParserVisitor<Object>, CSSParser
             declaration_stack.peek().invalid = true;
             return null;
         }
-        if (ctx.PLUS() != null) {
-            log.debug("VP - plus");
-            funct_args_stack.peek().term = tf.createOperator('+');
-        } else if (ctx.MINUS() != null) {
-            log.debug("VP - minus");
-            funct_args_stack.peek().term = tf.createOperator('-');
-        } else if (ctx.ASTERISK() != null) {
-            log.debug("VP - *");
+        int unary = 1;
+        if (ctx.MINUS() != null) {
+            unary = -1;
+        }
+        if (ctx.ASTERISK() != null) {
+            log.debug("FA - *");
             funct_args_stack.peek().term = tf.createOperator('*');
         } else if (ctx.SLASH() != null) {
-            log.debug("VP - /");
+            log.debug("FA - /");
             funct_args_stack.peek().term = tf.createOperator('/');
         } else if (ctx.LPAREN() != null) {
-            log.debug("VP - (");
+            log.debug("FA - (");
             funct_args_stack.peek().term = tf.createOperator('(');
         } else if (ctx.RPAREN() != null) {
-            log.debug("VP - )");
+            log.debug("FA - )");
             funct_args_stack.peek().term = tf.createOperator(')');
         } else if (ctx.COMMA() != null) {
-            log.debug("VP - comma");
+            log.debug("FA - comma");
             funct_args_stack.peek().term = tf.createOperator(',');
         } else if (ctx.string() != null) {
-            log.debug("VP - string");
+            log.debug("FA - string");
             funct_args_stack.peek().term = tf.createString(extractTextUnescaped(ctx.string().getText()));
         } else if (ctx.IDENT() != null) {
-            log.debug("VP - ident");
-            funct_args_stack.peek().term = tf.createIdent(extractTextUnescaped(ctx.IDENT().getText()));
+            log.debug("FA - ident");
+            funct_args_stack.peek().term = tf.createIdent(extractTextUnescaped((unary == -1 ? "-" : "") + ctx.IDENT().getText()));
         } else if (ctx.PERCENTAGE() != null) {
-            log.debug("VP - percentage");
-            funct_args_stack.peek().term = tf.createPercent(ctx.PERCENTAGE().getText(), 1);
+            log.debug("FA - percentage");
+            funct_args_stack.peek().term = tf.createPercent(ctx.PERCENTAGE().getText(), unary);
         } else if (ctx.DIMENSION() != null) {
-            log.debug("VP - dimension");
+            log.debug("FA - dimension");
             String dim = ctx.DIMENSION().getText();
-            funct_args_stack.peek().term = tf.createDimension(dim, 1);
+            funct_args_stack.peek().term = tf.createDimension(dim, unary);
             if (funct_args_stack.peek().term == null) {
-                log.info("Unable to create dimension from {}, unary {}", dim, 1);
+                log.info("Unable to create dimension from {}, unary {}", dim, unary);
                 declaration_stack.peek().invalid = true;
             }
         } else if (ctx.HASH() != null) {
-            log.debug("VP - hash");
+            log.debug("FA - hash");
             funct_args_stack.peek().term = tf.createColor(ctx.HASH().getText());
             if (funct_args_stack.peek().term == null) {
                 declaration_stack.peek().invalid = true;
             }
         } else if (ctx.NUMBER() != null) {
-            log.debug("VP - number");
-            funct_args_stack.peek().term = tf.createNumeric(ctx.NUMBER().getText(), 1);
+            log.debug("FA - number");
+            funct_args_stack.peek().term = tf.createNumeric(ctx.NUMBER().getText(), unary);
         } else if (ctx.funct() != null) {
             funct_args_stack.peek().term = null;
             Term<?> fnterm = (Term<?>) visitFunct(ctx.funct());
             if (fnterm != null) {
+                if (unary == -1 && fnterm instanceof TermFunction) {
+                    ((TermFunction) fnterm).setFunctionName('-' + ((TermFunction) fnterm).getFunctionName());
+                }
                 funct_args_stack.peek().term = fnterm;
             } else {
                 declaration_stack.peek().invalid = true;
